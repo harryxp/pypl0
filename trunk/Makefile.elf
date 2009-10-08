@@ -1,0 +1,21 @@
+#
+# Makefile for Linux
+# Nasm outputs ELF object files and GCC does the linkage to
+#   generate the final executables.
+# You may need to designate PYTHON, AS and CC below.
+#
+
+PYTHON=python
+PYSRCDIR=src/
+PL0SRCDIR=pl0/
+
+AS=nasm
+ASFLAGS=-f elf -O99 -d ELF_TYPE
+OBJDIR=build/elfobj/
+ASMDIR=build/x86asm/
+
+CC=gcc
+BINDIR=build/elfbin/
+ASMLIB=lib/elfobj/asm_io.o
+
+include Makefile.in
