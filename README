@@ -4,8 +4,11 @@ http://www.panxingzhi.net
 
 Note: Pan is my family name, and literally my *first* name.
       If you use Vim but not folds, type zr to expand all.
+      I appreciate it if you send me some feedback, comments, bug
+      reports, etc.
 
 0. Introduction and overview {{{
+
 This work is an effort for studying compiler & interpreter construction, and
 related techniques.
 
@@ -62,12 +65,14 @@ on schedule.
 My aim is to learn and play around rather than to develop a full-fledged
 system, which is not worth without being paid =). So the source language is
 PL/0, a very simple Pascal like language designed by Niklaus Wirth for
-educational purposes. And the implementing langauge is Python,  which is chosen
-because its clear syntax is ideal for demostrating algorithms and its string and
-seqeunce processing ability is highly valuable for writing almost any part of a
-compiler. Its string template (%) is excellent for low level code generation
-when code chunks don't correspond nicely, as we shall see in the following part
-for generating X86 assembly.
+educational purposes. And the implementing langauge is Python, which is chosen
+because its clear syntax is ideal for demostrating algorithms and its string
+and seqeunce processing ability is highly valuable for writing almost any part
+of a compiler. Its string template (%) is excellent for low level code
+generation when code chunks don't correspond nicely, as we shall see in the
+following part for generating X86 assembly. At last, Python code is publicly
+recognized as easy to read, so if this documentation isn't clear enough, the
+code and its inline comments speak for itself.
 
 The diagram below shows the components of the compilation system:
 
@@ -111,10 +116,13 @@ During this joyous development I realized one important idea to keep in mind:
     magical but plain text with rules called the grammer, and with meanings
     called the semantics.
 
-Whenever I strayed from the point, this idea always pulled me back on road -
-it's like translating Chinese to English, but much easier. Easier because the
-grammer and the semantics in a programmer language is much simpler than one can
-find in human languages.
+Much effort in building compilers is devoted to the translation process - we're
+trying to regulate text to a form in terms of the target machine. It's a pity
+that I seldomly, if never, saw this point explitly stated in compiler books.
+However when I strayed from the point, this idea always pulled me back on road
+- the whole thing is like translating Chinese to English, but much easier.
+Easier because the grammer and the semantics in a programmer language is much
+simpler than one can find in human languages.
 
 Speaking of difficulty, the "gap" between the source and the target language
 matters, a lot. We can think of our abstract syntax tree as a language and
@@ -153,7 +161,8 @@ generators. The simple grammer allows me to do so, and it's great fun!
 }}}
 
 1. The grammer {{{
-The grammer I used is a modified version of this one:
+
+The grammer used is a modified version of this one:
 http://en.wikipedia.org/wiki/PL/0. Symbol "!" is added so we have an output
 mechanism. I also capitalized all the keywords and added angle brackets to ID
 and NUM, which are regex tokens (instead of simple string keywords). <EOF> is a
@@ -187,6 +196,7 @@ factor = <ID> | <NUM> | "(" expression ")"
 }}}
 
 2. The scanner - pypl0_scanner.py {{{
+
 The scanner is invoked by the parser but it's in a different module
 (pypl0_scanner). All we need from the scanner in the parser is 3 things:
 
@@ -231,6 +241,7 @@ Token.CONST, Token.EQUAL, Token.COMMA, \
 }}}
 
 3. The parser - pypl0_parser.py {{{
+
 It's a classical recursive descent parser with lookahead - 1 token lookahead is
 sufficient for the PL/0 grammer.
 
@@ -305,6 +316,7 @@ the whole parsing phase to test following phases.
 }}}
 
 4. The abstract syntax tree - pypl0_astnodes.py, pypl0_astgen.py {{{
+
 There are many stuff we don't need in the parse tree for the next steps -
 whether we want to write an interpreter to "run the program" or to generate
 target code. E.g., our parse tree is like this:
@@ -353,14 +365,98 @@ which holds its child nodes in the tree.
 Note that although procedure definitions are not non-terminals in the grammer,
 we abstract them as an ASTNodes nontheless for our own convenience.
 
+The AST is just another form of the source code - a step furthur towards the
+machine code. And it's close enough for us to write an interpreter for it.
+
 }}}
 
 5. The interpreter - pypl0_interp.py {{{
-semantic checking - type, const(asm doesn't know this), var referred before initialization
-TODO CHECK "GUIDE.PDF" FOR MORE POSSIBLE CHECKS...
+
+The fact that PL/0 is a very simple language makes the interpreter very easy
+to write once the code is in a proper form to be manipulated (the AST).
+
+The interpreter simply traverses the whole AST and executes it, with certain
+semantic checkings:
+
+    identiers must be declared and initialized before use
+    left-hand side of an assignment must be a variable (instead of a constant
+        or a procedure)
+    identiers in an expression must be variables or constants
+    every called identier is a subroutine
+
+
+Other possible but undone checkings:
+    one identier can be declared no more than once in the same scope
+    type checking (since we only have one type now)
+
+Possible "sanity checks":
+    is every variable both written and read?
+    is every constant read?
+    is every subroutine called?
+    is the program non-empty?
+
 }}}
 
 6. Generating X86 assembly - pypl0_x86codegen.py, pypl0_x86codegentpl.py {{{
+
+Translating the AST to X86 is less straight forward than to write an
+interpreter. For example, the while loop
+
+    while( condition ) {
+        body of loop
+    }
+
+would correspond to
+
+    while:
+        ; code to set FLAGS based on condition
+        jxx endwhile ; select xx so that the loop ends when the condition met
+        ; body of loop
+        jmp while
+    endwhile:
+
+Work needs to be done so that the condition and the body of loop are generated
+first and then "injected" to proper location, only then the translation of the
+while statement can be done.
+
+To do it we use Python's "formatted string" facility:
+
+"""
+; while label
+%s:
+; while condition
+%s
+; while statement
+%s
+; while next turn
+        jmp     %s
+; while endlabel
+%s:
+"""
+
+All the "%s" will be replaced with proper assembly once they're generated.
+
+Other language constructs are done in the similar way.
+
+}}}
+
+7. Compile to native executables {{{
+
+We use NASM (http://nasm.us) to assemble the X86 assembly code to object files
+(just another transformation). Once we got the the object files we can link
+them with our I/O library (asm_io) to produce real executables!
+
+Related commands (can be found in the makefiles)
+For Cygwin:
+nasm -f win32 -o lib/cygobj/asm_io.o lib/x86asm/asm_io.asm
+nasm -f win32 -o build/cygobj/filename.o build/x86asm/filename.asm
+gcc -o build/cygbin/filename build/cygobj/filename.o lib/cygobj/asm_io.o
+
+For Linux/ELF:
+nasm -f elf -d ELF_TYPE -o lib/elfobj/asm_io.o lib/x86asm/asm_io.asm
+nasm -f elf -d ELF_TYPE -o build/elfobj/filename.o build/x86asm/filename.asm
+gcc -o build/elfbin/filename build/elfobj/filename.o lib/elfobj/asm_io.o
+
 }}}
 
 Appendix I. To use the code {{{
@@ -386,7 +482,7 @@ pl0/                            ... PL/0 example code
     gcd.pl0                     ... greatest common divisor
     minimal.pl0                 ... minimal legal PL/0 program
     square.pl0
-    uninitialized.pl0           ... a program with legal syntax but wrong semantics
+    uninitialized.pl0           ... an example with legal syntax but wrong semantics
 src/                            ... Python implementation
     pypl0_astgen.py             ... AST generator
     pypl0_astnodes.py           ... AST nodes definition
@@ -403,7 +499,17 @@ Makefile.elf                    ... Makefile for ELF/Linux
 Makefile.in                     ... included Makefile
 README                          ... this documentation
 
-Main functionalities are centralized in src/pypl0_main.py.
+Main functionalities are centralized in src/pypl0_main.py, Run
+
+    python src/pypl0_main.py -h
+
+for help.
+
+The makefiles are used to facilitate building native executables from PL/0
+source code. Currently Cygwin and Linux/ELF formats are supported. Just rename
+the right makefile to "Makefile" or use the "-f" option to designate the right
+one, and type "make" in the command line under the root directory.
+
 }}}
 
 Appendix II. pypl0_utils.py {{{
@@ -419,9 +525,12 @@ Error reporting & recovery - error msg doesn't give all "possibilities".
 Because it doesn't take things like '[]' into account, instead it simply gives
 the next Token after these.
 
-The init steps of the scanner, parser, walker can be more elegant.
+The X86 assembly code generator should check variable references to see if
+they're used before initialized .
+
+Extending PL/0 itself - functions with parameters, first-class functions, else branch, string type, boolean type (distinguished from integer type), user defined types, etc.
+
 }}}
 
 vim:fdm=marker:
 
-nasm -f elf -d ELF_TYPE -o lib/elfobj/asm_io.o lib/x86asm/asm_io.asm

@@ -12,12 +12,15 @@ obj : x86asm
 	$(AS) $(ASFLAGS) -o $(OBJDIR)minimal.o   $(ASMDIR)minimal.asm
 	$(AS) $(ASFLAGS) -o $(OBJDIR)square.o    $(ASMDIR)square.asm
 
-bin : obj
+libobj:
+	$(AS) $(ASFLAGS) -o $(ASMLIB) lib/x86asm/asm_io.asm
+
+bin : obj libobj
 	$(CC) -o $(BINDIR)factorial $(OBJDIR)factorial.o $(ASMLIB)
 	$(CC) -o $(BINDIR)gcd       $(OBJDIR)gcd.o       $(ASMLIB)
 	$(CC) -o $(BINDIR)minimal   $(OBJDIR)minimal.o   $(ASMLIB)
 	$(CC) -o $(BINDIR)square    $(OBJDIR)square.o    $(ASMLIB)
 
 clean :
-	rm -f $(PYSRCDIR)*.pyc $(ASMDIR)*.asm $(OBJDIR)*.o $(BINDIR)*
+	rm -f $(PYSRCDIR)*.pyc $(ASMDIR)*.asm $(OBJDIR)*.o $(BINDIR)* $(ASMLIB)
 
