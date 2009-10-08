@@ -399,7 +399,7 @@ Possible "sanity checks":
 
 6. Generating X86 assembly - pypl0_x86codegen.py, pypl0_x86codegentpl.py {{{
 
-Translating the AST to X86 is less straight forward than to write an
+Translating the AST to X86 assembly is less straight forward than to write an
 interpreter. For example, the while loop
 
     while( condition ) {
@@ -437,6 +437,8 @@ To do it we use Python's "formatted string" facility:
 All the "%s" will be replaced with proper assembly once they're generated.
 
 Other language constructs are done in the similar way.
+
+We chose NASM to be our target code (http://nasm.us). An excellent introduction can be found at http://www.drpaulcarter.com/pcasm/.
 
 }}}
 
@@ -516,17 +518,18 @@ Appendix II. pypl0_utils.py {{{
 }}}
 
 Appendix III. Known issues and possible improvements {{{
+
 We haven't done any unit test at this point - it's important because the input
 can be diverse. We need broad test case coverage. And it's highly desirable
 that pieces of the whole program can be tested (thus debugged and maintained)
 separately.
 
-Error reporting & recovery - error msg doesn't give all "possibilities".
-Because it doesn't take things like '[]' into account, instead it simply gives
-the next Token after these.
+Error reporting & recovery of the parser - error msg doesn't give all
+"possibilities".  Because it doesn't take things like '[]' into account,
+instead it simply gives the next Token after these.
 
 The X86 assembly code generator should check variable references to see if
-they're used before initialized .
+they're used before initialized. This is done in the interpreter.
 
 Extending PL/0 itself - functions with parameters, first-class functions, else branch, string type, boolean type (distinguished from integer type), user defined types, etc.
 
