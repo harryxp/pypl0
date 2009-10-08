@@ -1,0 +1,427 @@
+PL/0 compiler in Python
+Pan Xingzhi
+http://www.panxingzhi.net
+
+Note: Pan is my family name, and literally my *first* name.
+      If you use Vim but not folds, type zr to expand all.
+
+0. Introduction and overview {{{
+This work is an effort for studying compiler & interpreter construction, and
+related techniques.
+
+For a novice programmer, compilers and interpreters are mysterious beings.
+Code is fed and everything just happens as desired. However a real hacker can
+hardly bear this obscurity and will finally want to find out what's under the
+hood. After all they are just programs devised by human beings so they must be
+fairly understandable and reasonable.
+
+At least when my interest on these stuff began, this was my motivation. I
+bought almost every compiler book available on the market - be it "dragon" or
+"tiger". Despite the low quality, in China one can get many famous computer
+books in English gravure at quite low prices. (For those biased: they're NOT
+pirated.)
+
+To my disappointment none of them served good for me. I could understand those
+algoritms for sure but I didn't get the whole picture; I saw the trees and even
+the leaves but I didn't get to see them as a forest. I found myself in a
+paradox: the idea lurks behind those text, and the key is the understanding of
+the idea itself.
+
+This situation lasted for a few years: I always wanted to write a compiler, but
+I didn't know exactly how (everything right after the parser's work became
+vague to me) or why (well, in Beijing it's hard to find a related job to
+justify this interest, if possible at all). However my enthusiasm for
+programming languages didn't fade. Over these years I've been writing code in
+different languages: Python, Scheme, Erlang, Bash, JavaScript, C, SQL, LZX,
+Java ... When I was doing this I couldn't help comparing different languages,
+different language features/paradigms, different ways to complete programming
+tasks. I read all kinds of materials on the Internet to get ideas how and why
+people do this and that. This is an enlightening process: everyday I became a
+better programmer than the day before. Then one day I found myself in a good
+shape to bite the bullet.
+
+It didn't come all of a sudden. The most high level language I could use back
+then was Java, which, despite the great IDE support (I was very fast on Eclipse
+JDT, but after using Vim I never want to come back), is monotonous (OO only, no
+first-class functions, etc.) and (thus) verbose. Now I am an expert Python
+programmer, and Python is so high level that it transforms my thoughts into
+executable programs with minimal code and time. I'm also good at Scheme and the
+functional programming paradigm. I have a deep understanding on programming
+languages now and just want to take one step further. I know how a Scheme
+interpreter works, thanks to SICP the wizard book. Besides, I'm a powerful
+Linux user, who has every needed tool ready at hand, especially Vim, on which
+I'm writing this now.
+
+After some warm-up reading I sat down and kicked off coding. The result is a
+compilation system, with a compiler front end generating the so-called abstract
+syntax tree, which can be executed directly by a interpreter, or fed to a
+compiler backend (or shall we say another compiler?) to (further) generate
+machine code. As the time of this writing, X86 assembly is supported and C-- is
+on schedule.
+
+My aim is to learn and play around rather than to develop a full-fledged
+system, which is not worth without being paid =). So the source language is
+PL/0, a very simple Pascal like language designed by Niklaus Wirth for
+educational purposes. And the implementing langauge is Python,  which is chosen
+because its clear syntax is ideal for demostrating algorithms and its string and
+seqeunce processing ability is highly valuable for writing almost any part of a
+compiler. Its string template (%) is excellent for low level code generation
+when code chunks don't correspond nicely, as we shall see in the following part
+for generating X86 assembly.
+
+The diagram below shows the components of the compilation system:
+
++------------------------------------------------------------------------------+
+|                                                                              |
+|                     scanner*/parser*                                         |
+|  PL/0 source code -------------------> concrete parse tree*                  |
+|                                                 |                            |
+|                                                 | AST generator*             |
+|                                                 |                            |
+|                                                 V                            |
+|            interpreter* <............. abstract syntax tree*                 |
+|                                                 |                            |
+|                                                 | X86 assembly generator*    |
+|                                                 |                            |
+|                                                 V                            |
+|                                            X86 assembly                      |
+|                                                 |                            |
+|                                                 | NASM assembler             |
+|                                                 |                            |
+|                                                 V                            |
+|                                            object file                       |
+|                                                 |                            |
+|                                                 | GCC (serves as a linker)   |
+|                                                 |                            |
+|                                                 V                            |
+|        operating system <.............   native executable                   |
+|                                                                              |
+|                                                                              |
+| *    implemented in Python                                                   |
+| -->  code transformation                                                     |
+| ..>  executed by                                                             |
+|                                                                              |
++------------------------------------------------------------------------------+
+
+See Appendix I for code organization and usage.
+
+During this joyous development I realized one important idea to keep in mind:
+
+    A compiler is just an effort to transform/translate code, which is nothing
+    magical but plain text with rules called the grammer, and with meanings
+    called the semantics.
+
+Whenever I strayed from the point, this idea always pulled me back on road -
+it's like translating Chinese to English, but much easier. Easier because the
+grammer and the semantics in a programmer language is much simpler than one can
+find in human languages.
+
+Speaking of difficulty, the "gap" between the source and the target language
+matters, a lot. We can think of our abstract syntax tree as a language and
+that's no problem - we even developed an interpret for it. The gap between PL/0
+source code and its AST is tiny - so small that we can jump over with little
+effort. On the other hand, the target language X86 assembly needs more
+sophisticated means when transforming, as we shall see in the following
+sections.
+
+We can think of this from another angle: to transform to the AST is easy but to
+execute it we need an interpreter. An interpreter written in high level
+languages saves us considerable effort since it understands a relatively "high
+level" translation. however if we make the effort to transform to the X86
+assembly (then to native code), the executor can be low level - hardware with
+instruction sets. We can think of our hardware as an interpreter of the machine
+code; we can also think our interpreter as some hardware who understands the
+AST.
+
+That being said, we can write a "machine" who understands different levels of
+form of code as we want. Had we written a software mimicing a "machine" who
+understands Intel(TM) CPU instructions (and executes it corretly), we got a
+virtual CPU (I don't know if VMWare(TM) works this way but I can imagine so).
+
+Besides this central idea, code organization is also vital. We strive to
+separate phases of the compiler into individual modules - they are just boxes
+takeing in input and producing (intermediate) output. By this way we can test &
+observe every phase independently - we can even print out those intermediate
+output. This is an excellent way to learn about compilers.
+
+All modules are prefixed with "pypl0_" to avoid name conflicts since names like
+"parser", "ast" and "utils" are very common.
+
+I decided to handcraft a recursive descent parser instead of using any parser
+generators. The simple grammer allows me to do so, and it's great fun!
+
+}}}
+
+1. The grammer {{{
+The grammer I used is a modified version of this one:
+http://en.wikipedia.org/wiki/PL/0. Symbol "!" is added so we have an output
+mechanism. I also capitalized all the keywords and added angle brackets to ID
+and NUM, which are regex tokens (instead of simple string keywords). <EOF> is a
+token representing the end of file. Here's the finished version:
+
+PL/0 TOKENS in regex
+<ID> = ["a"-"z""A"-"Z"]["a"-"z""A"-"Z""0-9"]*
+<NUM> = ["0-9"]+
+
+PL/0 GRAMMER in EBNF
+program = block "." <EOF>
+
+block = [ "CONST" <ID> "=" <NUM> {"," <ID> "=" <NUM>} ";"]
+        [ "VAR" <ID> {"," <ID>} ";"]
+        { "PROCEDURE" <ID> ";" block ";" } statement
+
+statement = [ <ID> ":=" expression | "CALL" <ID> |
+            "BEGIN" statement {";" statement } "END" |
+            "IF" condition "THEN" statement |
+            "WHILE" condition "DO" statement |
+            "!" expression ]
+
+condition = "ODD" expression |
+            expression ("="|"#"|"<"|"<="|">"|">=") expression
+
+expression = [ "+"|"-"] term { ("+"|"-") term}
+
+term = factor {("*"|"/") factor}
+
+factor = <ID> | <NUM> | "(" expression ")"
+}}}
+
+2. The scanner - pypl0_scanner.py {{{
+The scanner is invoked by the parser but it's in a different module
+(pypl0_scanner). All we need from the scanner in the parser is 3 things:
+
+    Token - the class definition
+    nexttoken - the function retriving the next (one) token
+    lookahead - the function looking ahead the next n tokens without actually
+                retrieving them
+
+The implementation of the scanner is extremely straightforward:
+
+    - it keeps a buffer of tokens and return one or more of them on demand
+      (nexttoken or lookahead)
+    - when tokens are in need, it first checks if the buffer has enough of
+      them; if not, it reads in lines of source code, tokenizes them and puts
+      them into the buffer until the demand is satisfied. By reading in lines,
+      the line number of each token is kept right in that token, thus it's easy
+      to report errors
+    - it moves the token out of the buffer when nexttoken gets called
+    - it does NOT move tokens out of the buffer when lookahead gets called
+    - the tokenizing algorithm is self-documented in the code
+
+Maybe in the future we can use some existing tokenizer to further shrink our
+code.
+
+One thing worth noticing is the evil magic I cast:
+(lambda doc:
+        map(lambda t: setattr(Token, t, t),
+            [ t.rstrip(',') for t in doc[doc.find('(')+1:doc.find(')')].split() ]
+        )
+)(Token.__doc__)
+
+This saved me from writing:
+
+Token.ID, Token.NUM, Token.DOT, \
+Token.CONST, Token.EQUAL, Token.COMMA, \
+.
+.
+= 'id', 'num', 'dot', \
+'const', 'equal', 'comma', \
+.
+.
+}}}
+
+3. The parser - pypl0_parser.py {{{
+It's a classical recursive descent parser with lookahead - 1 token lookahead is
+sufficient for the PL/0 grammer.
+
+Note that lookahead happens when "|" (alternative), "[" (0 or 1 of the
+previous), "{" (0 or more of the previous) are seen in the EBNF grammer.
+Moreover, note how we "mirror" these in a almost mechanical way:
+
+|       : if/elif/else statement
+[ ... ] : if statement
+{ ... } : while statement
+
+These control structures all imply the idea of *conditions*.
+
+Look at the code: indeed it's mechanical and can be generated - think how we
+can write a parser generator.
+
+However it can be harder than expected, since PL/0 grammer is very simple.
+
+Analysis of the nullables and the first/follow sets (the capitalized U means
+the union operation of sets):
+
+nullables: block, statement
+
+FIRST(program)
+= { "." } U FIRST(block)
+= { ".", "CONST", "VAR", "PROCEDURE", <ID>, "CALL", "BEGIN", "IF", "WHILE", "!" }
+FOLLOW(program)
+= { <EOF> }
+FIRST(block)
+= { "CONST", "VAR", "PROCEDURE" } U FIRST(statement)
+= { "CONST", "VAR", "PROCEDURE", <ID>, "CALL", "BEGIN", "IF", "WHILE", "!" }
+FOLLOW(block)
+= { ".", ";" }
+FIRST(statement)
+= { <ID>, "CALL", "BEGIN", "IF", "WHILE", "!" }
+FOLLOW(statement)
+= { ";", "END" } U FOLLOW(block)
+= { ";", "END", "." }
+FIRST(condition)
+= { "ODD" } U FIRST(expression)
+= { "ODD", "+", "-", <ID>, <NUM>, "(" }
+FOLLOW(condition)
+= { "THEN", "DO" }
+FIRST(expression)
+= { "+", "-" } U FIRST(term)
+= { "+", "-", <ID>, <NUM>, "(" }
+FOLLOW(expression)
+= { ")", "=", "#", "<", "<=", ">", ">=" } U FOLLOW(statement) U FOLLOW(condition)
+= { ")", "=", "#", "<", "<=", ">", ">=", ";", "END", ".", "THEN", "DO" }
+FIRST(term)
+= FIRST(factor)
+= { <ID>, <NUM>, "(" }
+FOLLOW(term)
+= { "+", "-" } U FOLLOW(expression)
+= { "+", "-", ")", "=", "#", "<", "<=", ">", ">=", ";", "END", ".", "THEN", "DO" }
+FIRST(factor)
+= { <ID>, <NUM>, "(" }
+FOLLOW(factor)
+= { "*", "/" } U FOLLOW(term)
+= { "*", "/", "+", "-", ")", "=", "#", "<", "<=", ">", ">=", ";", "END", ".", "THEN", "DO" }
+
+TODO: a predictive parsing table (will be very big!!!)
+
+The data structure we use to represent the parse tree is simply a tree, whose
+nodes are tagged lists. For example:
+
+    ['<PROGRAM>', ['<BLOCK>' ... ], DOT("."), EOF("")]
+
+We can print it out with the prettyPrintTree function in the pypl0_utils module.
+We can even write some code to mock up the tree directly, if we wish to skip
+the whole parsing phase to test following phases.
+}}}
+
+4. The abstract syntax tree - pypl0_astnodes.py, pypl0_astgen.py {{{
+There are many stuff we don't need in the parse tree for the next steps -
+whether we want to write an interpreter to "run the program" or to generate
+target code. E.g., our parse tree is like this:
+
+    ['<PROGRAM>', ['<BLOCK>' ... ], DOT("."), EOF("")]
+
+The '<PROGRAM>' tag is a lame way to represent the tree node - we still have to
+retrieve its useful "block" subnode as the 2nd element in the list, according
+to the *grammer*; moreover, the 3rd and 4th elements: DOT(".") and EOF("") are
+useless at all. We don't need them from now on because they have nothing to do
+with the semantics (meaning/behavior) of the program - they have served as
+delimitors of the source code to facilitate our parsing and they have served
+well. But once we obtain the correct structure of the program, their tasks are
+done.
+
+The (concrete) parse tree mirrors the source code at every detail. But what is
+needed now is semantics for interpreting and transformation (to target code).
+What we need is a data structure conveying the meaning of the program,
+independent of the concrete syntax or grammer - that's why it's called abstract
+syntax tree (AST). You are going to see how we'll use it in the subsequent
+phases.
+
+There are different ways to construct the AST. We could have done it in the
+parser - that's pretty much the standard way and it's totally justified. We
+still use "lookahead" and "expect" to see if the source code conforms to the
+grammer but instead of taking in all the tokens, we drop useless ones like DOT
+and EOF above, and construct AST nodes on the fly instead of lists of lists and
+tokens.
+
+The way we choose to do it, however, is to generate the parse tree first and
+walk the parse tree later at any time we want to build a corresponding AST.
+This means another pass. We do this because, 1) well, the parser is already
+written as is without considering the abstract syntax stuff; 2) we want to make
+every step clear because we're learning.
+
+We have also boldly assumed that the input of the tree walker is always valid
+since it's the responsibility of the parser to guarantee the syntax rules are
+obeyed, and we have done a lot of error checking for it so only a minimal error
+checking is done when generating the AST.
+
+We use ASTNode and its subclasses as the abstraction of the AST. To utilize the
+prettyPrintTree function, these classes mimic list behaviors. This is possible
+thanks to Python's duck typing. Every ASTNode instance has a children property,
+which holds its child nodes in the tree.
+
+Note that although procedure definitions are not non-terminals in the grammer,
+we abstract them as an ASTNodes nontheless for our own convenience.
+
+}}}
+
+5. The interpreter - pypl0_interp.py {{{
+semantic checking - type, const(asm doesn't know this), var referred before initialization
+TODO CHECK "GUIDE.PDF" FOR MORE POSSIBLE CHECKS...
+}}}
+
+6. Generating X86 assembly - pypl0_x86codegen.py, pypl0_x86codegentpl.py {{{
+}}}
+
+Appendix I. To use the code {{{
+
+Directory layout:
+
+build/                          ... generated stuff
+    cygbin/                     ... executables for Cygwin from build/cygobj
+    cygobj/                     ... object files for Cygwin from build/x86asm
+    elfbin/                     ... executables for ELF/Linux from build/elfobj
+    elfobj/                     ... object files for ELF/Linux from build/x86asm
+    x86asm/                     ... X86 assembly from PL/0 source code under pl0
+lib/                            ... I/O routine
+    cygobj/
+        asm_io.o                ... linked with build/cygobj
+    elfobj/
+        asm_io.o                ... linked with build/elfobj
+    x86asm/
+        asm_io.asm              ... included by build/x86asm
+        asm_io.inc
+pl0/                            ... PL/0 example code
+    factorial.pl0               ... factorial using recursion
+    gcd.pl0                     ... greatest common divisor
+    minimal.pl0                 ... minimal legal PL/0 program
+    square.pl0
+    uninitialized.pl0           ... a program with legal syntax but wrong semantics
+src/                            ... Python implementation
+    pypl0_astgen.py             ... AST generator
+    pypl0_astnodes.py           ... AST nodes definition
+    pypl0_interp.py             ... AST interpreter
+    pypl0_main.py               ... Entry point of the system
+    pypl0_parser.py
+    pypl0_scanner.py
+    pypl0_utils.py              ... pretty print the parse tree and the AST
+    pypl0_x86codegen.py         ... X86 assembly generator
+    pypl0_x86codegentpl.py      ... string templates used by pypl0_x86codegen
+unittest/                       ... UT code, to be added...
+Makefile.cygwin                 ... Makefile for Cygwin
+Makefile.elf                    ... Makefile for ELF/Linux
+Makefile.in                     ... included Makefile
+README                          ... this documentation
+
+Main functionalities are centralized in src/pypl0_main.py.
+}}}
+
+Appendix II. pypl0_utils.py {{{
+}}}
+
+Appendix III. Known issues and possible improvements {{{
+We haven't done any unit test at this point - it's important because the input
+can be diverse. We need broad test case coverage. And it's highly desirable
+that pieces of the whole program can be tested (thus debugged and maintained)
+separately.
+
+Error reporting & recovery - error msg doesn't give all "possibilities".
+Because it doesn't take things like '[]' into account, instead it simply gives
+the next Token after these.
+
+The init steps of the scanner, parser, walker can be more elegant.
+}}}
+
+vim:fdm=marker:
+
+nasm -f elf -d ELF_TYPE -o lib/elfobj/asm_io.o lib/x86asm/asm_io.asm

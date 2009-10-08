@@ -1,0 +1,21 @@
+#
+# Makefile for Cygwin
+# Nasm outputs win32 object files but the .exe files generated
+#   by Cygwin GCC need cygwin1.dll.
+# You may need to designate PYTHON, AS and CC below.
+#
+
+PYTHON=python
+PYSRCDIR=src/
+PL0SRCDIR=pl0/
+
+AS=nasm
+ASFLAGS=-f win32
+OBJDIR=build/cygobj/
+ASMDIR=build/x86asm/
+
+CC=gcc
+BINDIR=build/cygbin/
+ASMLIB=lib/cygobj/asm_io.o
+
+include Makefile.in

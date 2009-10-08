@@ -1,0 +1,19 @@
+CONST fac = 5;
+VAR x, accum;
+
+PROCEDURE factorial;
+BEGIN
+    IF x = 1 THEN ! accum;
+    IF x > 1 THEN BEGIN
+        accum := accum * x;
+        x := x - 1;
+        CALL factorial
+    END
+END;
+
+BEGIN
+    x := fac;
+    accum := 1;
+    CALL factorial
+END.
+
