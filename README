@@ -498,6 +498,12 @@ Makefile.elf                    ... Makefile for ELF/Linux
 Makefile.in                     ... included Makefile
 README                          ... this documentation
 
+Just grab everything by
+
+    svn checkout http://pypl0.googlecode.com/svn/trunk/ pypl0-read-only
+
+.
+
 Main functionalities are centralized in src/pypl0_main.py, Run
 
     python src/pypl0_main.py -h
@@ -507,8 +513,21 @@ for help. Python 2.5 or higher is needed.
 The makefiles are used to facilitate building native executables from PL/0
 source code. Currently Cygwin and Linux/ELF formats are supported. Just rename
 the right makefile to "Makefile" or use the "-f" option to designate the right
-one, and type "make" in the command line under the top directory. Note that you
-need NASM (http://nasm.us) and GCC for the makefile to work. 
+one (see below), and type "make" in the command line under the top directory.
+Note that you need Python 2.5 or higher, NASM 2.07 (http://nasm.us, NASM 2.00
+should suffice but not tested) and GCC 4.3 for the makefile to work.
+
+The PL/0 source code can be either interpreted, or compiled to native code to
+be executed. For example, on a Linux box
+
+    python src/pypl0_main.py interp pl0/factorial.pl0
+
+and
+
+    make -f Makefile.elf
+    build/elfbin/factorial.pl0
+
+yield the same result. 
 
 }}}
 
