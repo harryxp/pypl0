@@ -471,10 +471,8 @@ build/                          ... generated stuff
     elfobj/                     ... object files for ELF/Linux from build/x86asm
     x86asm/                     ... X86 assembly from PL/0 source code under pl0
 lib/                            ... I/O routine
-    cygobj/
-        asm_io.o                ... linked with build/cygobj
-    elfobj/
-        asm_io.o                ... linked with build/elfobj
+    cygobj/                     ... asm_io.o, linked with build/cygobj
+    elfobj/                     ... asm_io.o, linked with build/elfobj
     x86asm/
         asm_io.asm              ... included by build/x86asm
         asm_io.inc
@@ -488,7 +486,7 @@ src/                            ... Python implementation
     pypl0_astgen.py             ... AST generator
     pypl0_astnodes.py           ... AST nodes definition
     pypl0_interp.py             ... AST interpreter
-    pypl0_main.py               ... Entry point of the system
+    pypl0_main.py               ... *ENTRY POINT* of the system
     pypl0_parser.py
     pypl0_scanner.py
     pypl0_utils.py              ... pretty print the parse tree and the AST
@@ -504,12 +502,13 @@ Main functionalities are centralized in src/pypl0_main.py, Run
 
     python src/pypl0_main.py -h
 
-for help.
+for help. Python 2.5 or higher is needed.
 
 The makefiles are used to facilitate building native executables from PL/0
 source code. Currently Cygwin and Linux/ELF formats are supported. Just rename
 the right makefile to "Makefile" or use the "-f" option to designate the right
-one, and type "make" in the command line under the root directory.
+one, and type "make" in the command line under the top directory. Note that you
+need NASM (http://nasm.us) and GCC for the makefile to work. 
 
 }}}
 
