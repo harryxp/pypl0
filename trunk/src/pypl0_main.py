@@ -49,16 +49,15 @@ if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser(
             usage="""
-python %prog [-o outputfile] action pl0sourcefile
+python %prog action [-o outputfile] pl0sourcefile
 Action is one of
     parseprint      - parse and print the parse tree,
     astprint        - parse, generate the AST then print the AST,
     interp          - parse, generate the AST then interpret the AST,
     x86asm          - parse, generate the AST and the X86Assembly
                       (use the Makefile if you want to get the binary executable),
-    c--             - parse, generate the AST the C-- code.
-Outputfile is ignored unless the action is x86asm or c--.
-""")
+    c--             - parse, generate the AST the C-- code (not supported yet).
+Outputfile is ignored unless the action is x86asm or c--.""")
     parser.add_option('-o', '--outputfile',
                       action='store',
                       dest='outputfile',
@@ -66,7 +65,7 @@ Outputfile is ignored unless the action is x86asm or c--.
     (options, args) = parser.parse_args()
 
     if len(args) != 2:
-        parser.error('Insufficient number of arguments.')
+        parser.error('wrong number of arguments.')
 
     action = args[0]
     infile = args[1]

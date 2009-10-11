@@ -1,10 +1,10 @@
 all : bin
 
 x86asm : clean
-	$(PYTHON) $(PYSRCDIR)pypl0_main.py -o $(ASMDIR)factorial.asm x86asm $(PL0SRCDIR)factorial.pl0
-	$(PYTHON) $(PYSRCDIR)pypl0_main.py -o $(ASMDIR)gcd.asm x86asm       $(PL0SRCDIR)gcd.pl0
-	$(PYTHON) $(PYSRCDIR)pypl0_main.py -o $(ASMDIR)minimal.asm x86asm   $(PL0SRCDIR)minimal.pl0
-	$(PYTHON) $(PYSRCDIR)pypl0_main.py -o $(ASMDIR)square.asm x86asm    $(PL0SRCDIR)square.pl0
+	$(PYTHON) $(PYSRCDIR)pypl0_main.py x86asm -o $(ASMDIR)factorial.asm $(PL0SRCDIR)factorial.pl0
+	$(PYTHON) $(PYSRCDIR)pypl0_main.py x86asm -o $(ASMDIR)gcd.asm       $(PL0SRCDIR)gcd.pl0
+	$(PYTHON) $(PYSRCDIR)pypl0_main.py x86asm -o $(ASMDIR)minimal.asm   $(PL0SRCDIR)minimal.pl0
+	$(PYTHON) $(PYSRCDIR)pypl0_main.py x86asm -o $(ASMDIR)square.asm    $(PL0SRCDIR)square.pl0
 
 obj : x86asm
 	$(AS) $(ASFLAGS) -o $(OBJDIR)factorial.o $(ASMDIR)factorial.asm
