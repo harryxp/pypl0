@@ -1,4 +1,4 @@
-CONST fac = 5;
+CONST num = 5;
 VAR x, accum;
 
 PROCEDURE factorial;
@@ -12,7 +12,7 @@ BEGIN
 END;
 
 BEGIN
-    x := fac;
+    x := num;
     accum := 1;
     CALL factorial
 END.
