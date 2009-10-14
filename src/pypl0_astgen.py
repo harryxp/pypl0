@@ -159,7 +159,7 @@ def traverse(node):
                 return NumFactor(lst[0])
             elif lst and hasattr(lst[0], 'tokentype') and \
                  lst[0].tokentype == Token.LPAREN:
-                return ExprFactor(lst[1])
+                return ExprFactor(traverse(lst[1]))
 
     else:
         # terminal nodes - tokens are good representation of them
