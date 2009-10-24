@@ -58,7 +58,7 @@ After some warm-up reading I sat down and kicked off coding. The result is a
 compilation system, with a compiler front end generating the so-called abstract
 syntax tree, which can be executed directly by a interpreter, or fed to a
 compiler backend (or shall we say another compiler?) to (further) generate
-machine code. As the time of this writing, X86 assembly is supported and C-- is
+machine code. As the time of this writing, x86 assembly is supported and C-- is
 on schedule.
 
 My aim is to learn and play around rather than to develop a full-fledged
@@ -69,7 +69,7 @@ because its clear syntax is ideal for demostrating algorithms and its string
 and seqeunce processing ability is highly valuable for writing almost any part
 of a compiler. Its string template (%) is excellent for low level code
 generation when code chunks don't correspond nicely, as we shall see in the
-following part for generating X86 assembly. At last, Python code is publicly
+following part for generating x86 assembly. At last, Python code is publicly
 recognized as easy to read, so if this documentation isn't clear enough, the
 code and its inline comments speak for itself.
 
@@ -85,10 +85,10 @@ The diagram below shows the components of the compilation system:
 |                                                 V                            |
 |            interpreter* <............. abstract syntax tree*                 |
 |                                                 |                            |
-|                                                 | X86 assembly generator*    |
+|                                                 | x86 assembly generator*    |
 |                                                 |                            |
 |                                                 V                            |
-|                                            X86 assembly                      |
+|                                            x86 assembly                      |
 |                                                 |                            |
 |                                                 | NASM assembler             |
 |                                                 |                            |
@@ -127,14 +127,14 @@ Speaking of difficulty, the "gap" between the source and the target language
 matters, a lot. We can think of our abstract syntax tree as a language and
 that's no problem - we even developed an interpret for it. The gap between PL/0
 source code and its AST is tiny - so small that we can jump over with little
-effort. On the other hand, the target language X86 assembly needs more
+effort. On the other hand, the target language x86 assembly needs more
 sophisticated means when transforming, as we shall see in the following
 sections.
 
 We can think of this from another angle: to transform to the AST is easy but to
 execute it we need an interpreter. An interpreter written in high level
 languages saves us considerable effort since it understands a relatively "high
-level" translation. however if we make the effort to transform to the X86
+level" translation. however if we make the effort to transform to the x86
 assembly (then to native code), the executor can be low level - hardware with
 instruction sets. We can think of our hardware as an interpreter of the machine
 code; we can also think our interpreter as some hardware who understands the
@@ -396,9 +396,9 @@ Possible "sanity checks":
 
 }}}
 
-6. Generating X86 assembly - pypl0_x86codegen.py, pypl0_x86codegentpl.py {{{
+6. Generating x86 assembly - pypl0_x86codegen.py, pypl0_x86codegentpl.py {{{
 
-Translating the AST to X86 assembly is less straight forward than to write an
+Translating the AST to x86 assembly is less straight forward than to write an
 interpreter. For example, the while loop
 
     while( condition ) {
@@ -443,7 +443,7 @@ We chose NASM to be our target code (http://nasm.us). An excellent introduction 
 
 7. Compile to native executables {{{
 
-We use NASM (http://nasm.us) to assemble the X86 assembly code to object files
+We use NASM (http://nasm.us) to assemble the x86 assembly code to object files
 (just another transformation). Once we got the the object files we can link
 them with our I/O library (asm_io) to produce real executables!
 
@@ -469,7 +469,7 @@ build/                          ... generated stuff
     cygobj/                     ... object files for Cygwin from build/x86asm
     elfbin/                     ... executables for ELF/Linux from build/elfobj
     elfobj/                     ... object files for ELF/Linux from build/x86asm
-    x86asm/                     ... X86 assembly from PL/0 source code under pl0
+    x86asm/                     ... x86 assembly from PL/0 source code under pl0
 lib/                            ... I/O routine
     cygobj/                     ... asm_io.o, linked with build/cygobj
     elfobj/                     ... asm_io.o, linked with build/elfobj
@@ -490,7 +490,7 @@ src/                            ... Python implementation
     pypl0_parser.py
     pypl0_scanner.py
     pypl0_utils.py              ... pretty print the parse tree and the AST
-    pypl0_x86codegen.py         ... X86 assembly generator
+    pypl0_x86codegen.py         ... x86 assembly generator
     pypl0_x86codegentpl.py      ... string templates used by pypl0_x86codegen
 unittest/                       ... UT code, to be added...
 Makefile.cygwin                 ... Makefile for Cygwin
@@ -545,7 +545,7 @@ Error reporting & recovery of the parser - error msg doesn't give all
 "possibilities".  Because it doesn't take things like '[]' into account,
 instead it simply gives the next Token after these.
 
-The X86 assembly code generator should check variable references to see if
+The x86 assembly code generator should check variable references to see if
 they're used before initialized. This is done in the interpreter.
 
 Extending PL/0 itself - functions with parameters, first-class functions, else branch, string type, boolean type (distinguished from integer type), user defined types, etc.

@@ -14,7 +14,7 @@ data = []
 bss = []
 const = []
 
-## The X86 assembly code generator. Also does minimal semantic checking.
+## The x86 assembly code generator. Also does minimal semantic checking.
 def gen(node, ofile):
     del(const_names[:])
     del(var_names[:])

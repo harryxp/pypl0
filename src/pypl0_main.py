@@ -54,7 +54,7 @@ Action is one of
     parseprint      - parse and print the parse tree,
     astprint        - parse, generate the AST then print the AST,
     interp          - parse, generate the AST then interpret the AST,
-    x86asm          - parse, generate the AST and the X86Assembly
+    x86asm          - parse, generate the AST and x86 assembly
                       (use the Makefile if you want to get the binary executable),
     c--             - parse, generate the AST the C-- code (not supported yet).
 Outputfile is ignored unless the action is x86asm or c--.""")
