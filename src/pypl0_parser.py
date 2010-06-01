@@ -96,14 +96,15 @@ def condition():
             result.append(_expect(Token.LTEQ))
         elif t.tokentype == Token.GT:
             result.append(_expect(Token.GT))
-        elif t.tokentype == Token.GT:
-            result.append(_expect(Token.GT))
+        elif t.tokentype == Token.GTEQ:
+            result.append(_expect(Token.GTEQ))
         else:
             _reporterror((Token.EQUAL,
                           Token.HASH,
                           Token.LT,
                           Token.LTEQ,
-                          Token.GT),
+                          Token.GT,
+                          Token.LTEQ),
                          t)
         result.append(expression())
 
